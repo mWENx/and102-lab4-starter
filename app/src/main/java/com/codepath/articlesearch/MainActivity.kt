@@ -22,11 +22,11 @@ fun createJson() = Json {
 private const val TAG = "MainActivity/"
 private const val SEARCH_API_KEY = BuildConfig.API_KEY
 private const val ARTICLE_SEARCH_URL =
-    "https://api.nytimes.com/svc/search/v2/articlesearch.json?api-key=${SEARCH_API_KEY}"
+    "https://api.themoviedb.org/3/trending/tv/week?api_key=${SEARCH_API_KEY}"
 
 class MainActivity : AppCompatActivity() {
-    private val articles = mutableListOf<Article>()
-    private lateinit var articlesRecyclerView: RecyclerView
+    private val shows = mutableListOf<Show>()
+    private lateinit var showsRecyclerView: RecyclerView
     private lateinit var binding: ActivityMainBinding
 
 
@@ -37,13 +37,14 @@ class MainActivity : AppCompatActivity() {
         val view = binding.root
         setContentView(view)
 
-        articlesRecyclerView = findViewById(R.id.articles)
-        val articleAdapter = ArticleAdapter(this, articles)
-        articlesRecyclerView.adapter = articleAdapter
+        //set up recycler view adapter
+        showsRecyclerView = findViewById(R.id.articles)
+        val showAdapter = ShowAdapter(this, shows)
+        showsRecyclerView.adapter = showAdapter
 
-        articlesRecyclerView.layoutManager = LinearLayoutManager(this).also {
+        showsRecyclerView.layoutManager = LinearLayoutManager(this).also {
             val dividerItemDecoration = DividerItemDecoration(this, it.orientation)
-            articlesRecyclerView.addItemDecoration(dividerItemDecoration)
+            showsRecyclerView.addItemDecoration(dividerItemDecoration)
         }
 
         val client = AsyncHttpClient()
@@ -60,17 +61,19 @@ class MainActivity : AppCompatActivity() {
             override fun onSuccess(statusCode: Int, headers: Headers, json: JSON) {
                 Log.i(TAG, "Successfully fetched articles: $json")
                 try {
+
+                    // parsing returned JSON
                     val parsedJSON = createJson().decodeFromString(
-                        SearchNewsResponse.serializer(),
+                        BaseResponse.serializer(),
                         json.jsonObject.toString()
                     )
 
-                    // TODO: Do something with the returned json (contains article information)
+                    // save the shows
+                    parsedJSON.results?.let { list ->
+                        shows.addAll(list)
 
-                    parsedJSON.response?.docs?.let { list ->
-                        articles.addAll(list)
-
-                        articleAdapter.notifyDataSetChanged()
+                        //reload the screen
+                        showAdapter.notifyDataSetChanged()
                     }
 
                 } catch (e: JSONException) {
